@@ -2,10 +2,14 @@
 # 2021 Martijn Atema <martijn@atema.one>
 
 DOCUMENTATIE="\
-Syntax: $0 [--achtergrond] [-o | --output output-naam] input-afbeelding
+Syntax: $0 [--achtergrond] [--test-achtergronden]
+           [-o | --output output-naam] input-afbeelding
 
     --achtergrond
         Genereer een achtergrond voor een expeditie
+
+    --test-achtergronden
+        Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17
     
     -o, --output output-naam
         Basis voor de naam(en) van de gegenereerde afbeelding(en)
@@ -20,7 +24,7 @@ print-error-en-stop() {
 }
 
 
-args=$(getopt -o o: -l achtergrond,output: -q -- "$@")
+args=$(getopt -o o: -l achtergrond,test-achtergronden,output: -q -- "$@")
 
 [ $? -ne 0 ] && print-error-en-stop "$DOCUMENTATIE"
 
@@ -28,6 +32,7 @@ eval "set -- $args"
 
 output_basis="expeditie"
 genereer_achtergrond=0
+genereer_test_achtergronden=0
 
 while true; do
     case "$1" in
@@ -35,6 +40,8 @@ while true; do
             output_basis="$2"; shift 2;;
         (--achtergrond)
             genereer_achtergrond=1; shift;;
+        (--test-achtergronden)
+            genereer_test_achtergronden=1; shift;;
         (--)
             shift; break;;
         (*)
@@ -47,7 +54,10 @@ done
 [ ! -f "$1" ] && print-error-en-stop "De gespecificeerde afbeelding bestaat niet"
 command -v convert >/dev/null 2>&1 || print-error-en-stop "ImageMagick ('convert') is niet geïnstalleerd"
 
+
 input_bestand="$1"
+printf "Input: $input_bestand\n\n"
+
 standaard_argumenten="-colorspace sRGB
                       -sampling-factor 4:2:0
                       -define jpeg:dct-method=float
@@ -55,12 +65,11 @@ standaard_argumenten="-colorspace sRGB
                       -interlace Plane
                       -strip"
 
-printf "Input: $input_bestand\n\n"
 
 if [ $genereer_achtergrond -eq 1 ]; then
     output_bestand="$output_basis-achtergrond.jpg"
 
-    printf "%s\n    -> %s\n" \
+    printf "%s\n    -> %s\n\n" \
            "Achtergrond wordt gegenereerd" \
            "$output_bestand"
 
@@ -68,4 +77,24 @@ if [ $genereer_achtergrond -eq 1 ]; then
             $standaard_argumenten \
             -resize 1500 \
             "$output_bestand"
+fi
+
+
+if [ $genereer_test_achtergronden -eq 1 ]; then
+    ratios=( 5x2 20x13 20x17 )
+
+    for ratio in "${ratios[@]}"; do
+        output_bestand="$output_basis-test-achtergrond-$ratio.jpg"
+
+        printf "%s\n    -> %s\n\n" \
+               "Test achtergrond ($ratio) wordt gegenereerd" \
+               "$output_bestand"
+
+        convert "$input_bestand" \
+                $standaard_argumenten \
+                -resize 1500 \
+                -gravity center \
+                -crop "${ratio//x/:}" \
+                "$output_bestand"
+    done
 fi
