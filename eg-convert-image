@@ -1,0 +1,71 @@
+#!/bin/bash
+# 2021 Martijn Atema <martijn@atema.one>
+
+DOCUMENTATIE="\
+Syntax: $0 [--achtergrond] [-o | --output output-naam] input-afbeelding
+
+    --achtergrond
+        Genereer een achtergrond voor een expeditie
+    
+    -o, --output output-naam
+        Basis voor de naam(en) van de gegenereerde afbeelding(en)
+
+    input-afbeelding
+        Bestandsnaam van de te gebruiken afbeelding"
+
+
+print-error-en-stop() {
+    >&2 printf "$1\n"
+    exit 1
+}
+
+
+args=$(getopt -o o: -l achtergrond,output: -q -- "$@")
+
+[ $? -ne 0 ] && print-error-en-stop "$DOCUMENTATIE"
+
+eval "set -- $args"
+
+output_basis="expeditie"
+genereer_achtergrond=0
+
+while true; do
+    case "$1" in
+        (-o)
+            output_basis="$2"; shift 2;;
+        (--achtergrond)
+            genereer_achtergrond=1; shift;;
+        (--)
+            shift; break;;
+        (*)
+            print-error-en-stop "$DOCUMENTATIE";;
+    esac
+done
+
+[ $# -eq 0 ] && print-error-en-stop "$DOCUMENTATIE"
+[ $# -ne 1 ] && print-error-en-stop "Specificeer niet meer dan één input afbeelding"
+[ ! -f "$1" ] && print-error-en-stop "De gespecificeerde afbeelding bestaat niet"
+command -v convert >/dev/null 2>&1 || print-error-en-stop "ImageMagick ('convert') is niet geïnstalleerd"
+
+input_bestand="$1"
+standaard_argumenten="-colorspace sRGB
+                      -sampling-factor 4:2:0
+                      -define jpeg:dct-method=float
+                      -quality 80
+                      -interlace Plane
+                      -strip"
+
+printf "Input: $input_bestand\n\n"
+
+if [ $genereer_achtergrond -eq 1 ]; then
+    output_bestand="$output_basis-achtergrond.jpg"
+
+    printf "%s\n    -> %s\n" \
+           "Achtergrond wordt gegenereerd" \
+           "$output_bestand"
+
+    convert "$input_bestand" \
+            $standaard_argumenten \
+            -resize 1500 \
+            "$output_bestand"
+fi
