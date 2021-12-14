@@ -9,7 +9,7 @@ Syntax: $0 [--achtergrond] [--test-achtergronden]
         Genereer een achtergrond voor een expeditie
 
     --test-achtergronden
-        Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17
+        Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17 (met en zonder tekst)
     
     -o, --output output-naam
         Basis voor de naam(en) van de gegenereerde afbeelding(en)
@@ -79,7 +79,6 @@ if [ $genereer_achtergrond -eq 1 ]; then
             "$output_bestand"
 fi
 
-
 if [ $genereer_test_achtergronden -eq 1 ]; then
     ratios=( 5x2 20x13 20x17 )
 
@@ -96,5 +95,24 @@ if [ $genereer_test_achtergronden -eq 1 ]; then
                 -gravity center \
                 -crop "${ratio//x/:}" \
                 "$output_bestand"
+
+
+        output_tekst_bestand="$output_basis-test-achtergrond-$ratio-tekst.jpg"
+
+        printf "%s\n    -> %s\n\n" \
+               "Test achtergrond met tekst ($ratio) wordt gegenereerd" \
+               "$output_tekst_bestand"
+
+        convert "$output_bestand" \
+                -fill rgba\(0,0,0,.45\) \
+                -draw "rectangle $(identify -format '0,%[fx:int(h*0.55)] %w,%h' $output_bestand)" \
+                -gravity south \
+                -font $(dirname "$0")/extras/OpenSans-Regular.ttf \
+                -fill white \
+                -pointsize 70 \
+                -draw "text $(identify -format '0,%[fx:int(h*.225-20)]' $output_bestand) 'Expeditie Titel'" \
+                -pointsize 40 \
+                -draw "text $(identify -format '0,%[fx:int(h*.225-70)]' $output_bestand) 'Subtitel'" \
+                "$output_tekst_bestand"
     done
 fi
