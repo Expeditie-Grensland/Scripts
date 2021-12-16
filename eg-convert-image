@@ -2,21 +2,38 @@
 # 2021 Martijn Atema <martijn@atema.one>
 
 DOCUMENTATIE="\
-Syntax: $0 [--achtergrond] [--test-achtergronden]
-           [-o | --output output-naam] input-afbeelding
+Syntax: $0 [--achtergrond] [--test-achtergronden] [--knip-boven pixels] [--knip-rechts pixels]
+           [--knip-onder pixels] [--knip-links pixels] [-o | --output output-naam]
+           input-afbeelding
 
     --achtergrond
-        Genereer een achtergrond voor een expeditie
+        Genereer een achtergrond voor een expeditie.
 
     --test-achtergronden
-        Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17 (met en zonder tekst)
-        Impliceert --achtergrond
+        Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17 (met en zonder tekst).
+        Impliceert --achtergrond.
+
+    --knip-boven pixels
+        Knip het gespecificeerde aantal pixels van de bovenkant van de afbeelding, alvorens
+        nieuwe afbeeldingen te genereren.
+
+    --knip-links pixels
+        Knip het gespecificeerde aantal pixels van de linkerkant van de afbeelding, alvorens
+        nieuwe afbeeldingen te genereren.
+
+    --knip-rechts pixels
+        Knip het gespecificeerde aantal pixels van de rechterkant van de afbeelding, alvorens
+        nieuwe afbeeldingen te genereren.
+
+    --knip-onder pixels
+        Knip het gespecificeerde aantal pixels van de onderkant van de afbeelding, alvorens
+        nieuwe afbeeldingen te genereren.
     
     -o, --output output-naam
-        Basis voor de naam(en) van de gegenereerde afbeelding(en)
+        Basis voor de naam(en) van de gegenereerde afbeelding(en).
 
     input-afbeelding
-        Bestandsnaam van de te gebruiken afbeelding"
+        Bestandsnaam van de te gebruiken afbeelding."
 
 
 print-error-en-stop() {
@@ -25,7 +42,7 @@ print-error-en-stop() {
 }
 
 
-args=$(getopt -o o: -l achtergrond,test-achtergronden,output: -q -- "$@")
+args=$(getopt -o o: -l achtergrond,test-achtergronden,output:,knip-boven:,knip-links:,knip-rechts:,knip-onder: -q -- "$@")
 
 [ $? -ne 0 ] && print-error-en-stop "$DOCUMENTATIE"
 
@@ -34,6 +51,10 @@ eval "set -- $args"
 output_basis="expeditie"
 genereer_achtergrond=0
 genereer_test_achtergronden=0
+knip_boven=0
+knip_links=0
+knip_rechts=0
+knip_onder=0
 
 while true; do
     case "$1" in
@@ -49,6 +70,22 @@ while true; do
             genereer_achtergrond=1
             genereer_test_achtergronden=1
             shift
+            ;;
+        --knip-boven)
+            knip_boven="$2"
+            shift 2
+            ;;
+        --knip-links)
+            knip_links="$2"
+            shift 2
+            ;;
+        --knip-rechts)
+            knip_rechts="$2"
+            shift 2
+            ;;
+        --knip-onder)
+            knip_onder="$2"
+            shift 2
             ;;
         --)
             shift
@@ -69,12 +106,29 @@ command -v convert >/dev/null 2>&1 || print-error-en-stop "ImageMagick ('convert
 input_bestand="$1"
 printf "Input: $input_bestand\n\n"
 
-standaard_argumenten="-colorspace sRGB
-                      -sampling-factor 4:2:0
-                      -define jpeg:dct-method=float
-                      -quality 80
-                      -interlace Plane
-                      -strip"
+basis_argumenten="-colorspace sRGB
+                  -sampling-factor 4:2:0
+                  -define jpeg:dct-method=float
+                  -quality 80
+                  -interlace Plane
+                  -strip
+                  +repage"
+
+if [ ! "$knip_boven" -eq 0 ]; then
+    basis_argumenten+=" -gravity North -chop 0x$knip_boven"
+fi
+
+if [ ! "$knip_links" -eq 0 ]; then
+    basis_argumenten+=" -gravity West -chop ${knip_links}x0"
+fi
+
+if [ ! "$knip_rechts" -eq 0 ]; then
+    basis_argumenten+=" -gravity East -chop ${knip_rechts}x0"
+fi
+
+if [ ! "$knip_onder" -eq 0 ]; then
+    basis_argumenten+=" -gravity South -chop 0x$knip_onder"
+fi
 
 
 achtergrond_bestand="$output_basis-achtergrond.jpg"
@@ -85,7 +139,8 @@ if [ $genereer_achtergrond -eq 1 ]; then
            "$achtergrond_bestand"
 
     convert "$input_bestand" \
-            $standaard_argumenten \
+            $basis_argumenten \
+            +repage \
             -resize 1500 \
             "$achtergrond_bestand"
 fi
