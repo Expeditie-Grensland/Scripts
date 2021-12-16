@@ -171,7 +171,7 @@ if [ $genereer_test_achtergronden -eq 1 ]; then
                 -fill rgba\(0,0,0,.45\) \
                 -draw "rectangle $(identify -format '0,%[fx:int(h*0.55)] %w,%h' $achtergrond_test_bestand)" \
                 -gravity south \
-                -font $(dirname "$0")/extras/OpenSans-Regular.ttf \
+                -font $(dirname "$0")/bronnen/OpenSans-Regular.ttf \
                 -fill white \
                 -pointsize 70 \
                 -draw "text $(identify -format '0,%[fx:int(h*.225-20)]' $achtergrond_test_bestand) 'Expeditie Titel'" \

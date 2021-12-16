@@ -1,0 +1,3 @@
+# Negeer alles dat geen script is (een extensie heeft)
+/*.*
+!/.gitignore
