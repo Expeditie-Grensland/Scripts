@@ -10,6 +10,7 @@ Syntax: $0 [--achtergrond] [--test-achtergronden]
 
     --test-achtergronden
         Genereer test-achtergronden in de ratios 5:2, 20:13 en 20:17 (met en zonder tekst)
+        Impliceert --achtergrond
     
     -o, --output output-naam
         Basis voor de naam(en) van de gegenereerde afbeelding(en)
@@ -36,16 +37,26 @@ genereer_test_achtergronden=0
 
 while true; do
     case "$1" in
-        (-o)
-            output_basis="$2"; shift 2;;
-        (--achtergrond)
-            genereer_achtergrond=1; shift;;
-        (--test-achtergronden)
-            genereer_test_achtergronden=1; shift;;
-        (--)
-            shift; break;;
-        (*)
-            print-error-en-stop "$DOCUMENTATIE";;
+        -o|--output)
+            output_basis="$2"
+            shift 2
+            ;;
+        --achtergrond)
+            genereer_achtergrond=1
+            shift
+            ;;
+        --test-achtergronden)
+            genereer_achtergrond=1
+            genereer_test_achtergronden=1
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            print-error-en-stop "$DOCUMENTATIE"
+            ;;
     esac
 done
 
@@ -66,53 +77,51 @@ standaard_argumenten="-colorspace sRGB
                       -strip"
 
 
-if [ $genereer_achtergrond -eq 1 ]; then
-    output_bestand="$output_basis-achtergrond.jpg"
+achtergrond_bestand="$output_basis-achtergrond.jpg"
 
+if [ $genereer_achtergrond -eq 1 ]; then
     printf "%s\n    -> %s\n\n" \
            "Achtergrond wordt gegenereerd" \
-           "$output_bestand"
+           "$achtergrond_bestand"
 
     convert "$input_bestand" \
             $standaard_argumenten \
             -resize 1500 \
-            "$output_bestand"
+            "$achtergrond_bestand"
 fi
 
 if [ $genereer_test_achtergronden -eq 1 ]; then
     ratios=( 5x2 20x13 20x17 )
 
     for ratio in "${ratios[@]}"; do
-        output_bestand="$output_basis-test-achtergrond-$ratio.jpg"
+        achtergrond_test_bestand="$output_basis-test-achtergrond-$ratio.jpg"
 
         printf "%s\n    -> %s\n\n" \
                "Test achtergrond ($ratio) wordt gegenereerd" \
-               "$output_bestand"
+               "$achtergrond_test_bestand"
 
-        convert "$input_bestand" \
-                $standaard_argumenten \
-                -resize 1500 \
+        convert "$achtergrond_bestand" \
                 -gravity center \
                 -crop "${ratio//x/:}" \
-                "$output_bestand"
+                "$achtergrond_test_bestand"
 
 
-        output_tekst_bestand="$output_basis-test-achtergrond-$ratio-tekst.jpg"
+        achtergrond_test_tekst_bestand="$output_basis-test-achtergrond-$ratio-tekst.jpg"
 
         printf "%s\n    -> %s\n\n" \
                "Test achtergrond met tekst ($ratio) wordt gegenereerd" \
-               "$output_tekst_bestand"
+               "$achtergrond_test_tekst_bestand"
 
-        convert "$output_bestand" \
+        convert "$achtergrond_test_bestand" \
                 -fill rgba\(0,0,0,.45\) \
-                -draw "rectangle $(identify -format '0,%[fx:int(h*0.55)] %w,%h' $output_bestand)" \
+                -draw "rectangle $(identify -format '0,%[fx:int(h*0.55)] %w,%h' $achtergrond_test_bestand)" \
                 -gravity south \
                 -font $(dirname "$0")/extras/OpenSans-Regular.ttf \
                 -fill white \
                 -pointsize 70 \
-                -draw "text $(identify -format '0,%[fx:int(h*.225-20)]' $output_bestand) 'Expeditie Titel'" \
+                -draw "text $(identify -format '0,%[fx:int(h*.225-20)]' $achtergrond_test_bestand) 'Expeditie Titel'" \
                 -pointsize 40 \
-                -draw "text $(identify -format '0,%[fx:int(h*.225-70)]' $output_bestand) 'Subtitel'" \
-                "$output_tekst_bestand"
+                -draw "text $(identify -format '0,%[fx:int(h*.225-70)]' $achtergrond_test_bestand) 'Subtitel'" \
+                "$achtergrond_test_tekst_bestand"
     done
 fi
