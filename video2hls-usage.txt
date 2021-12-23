@@ -1,0 +1,3 @@
+Typical usage
+
+./video2hls --debug --video-widths 1920 1280 854 --output outputfolder input.mov
