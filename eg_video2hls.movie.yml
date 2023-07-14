@@ -1,0 +1,72 @@
+defaults: &defaults
+  video_codec: h264
+  video_profile: high
+
+  audio_codec: aac
+  audio_profile: aac_low
+
+  hls_type: mpegts
+  hls_duration: 2
+
+mp4_files:
+  - name: progressive
+    <<: *defaults
+    width: 1280
+    height: 720
+
+    video_profile: main
+    video_profile_level: 3.1
+    video_bitrate: 2000
+
+    audio_bitrate: 96
+
+hls_streams:
+  - name: 2160p
+    <<: *defaults
+    width: 3840
+    height: 2160
+
+    video_profile_level: 5.2
+    video_bitrate: 14000
+
+    audio_bitrate: 192
+
+  - name: 1440p
+    <<: *defaults
+    width: 2560
+    height: 1440
+
+    video_profile_level: 5.2
+    video_bitrate: 6500
+
+    audio_bitrate: 192
+
+  - name: 1080p
+    <<: *defaults
+    width: 1920
+    height: 1080
+
+    video_profile_level: 5.1
+    video_bitrate: 4500
+
+    audio_bitrate: 128
+
+  - name: 720p
+    <<: *defaults
+    width: 1280
+    height: 720
+
+    video_profile_level: 4.2
+    video_bitrate: 2500
+
+    audio_bitrate: 128
+
+  - name: 480p
+    <<: *defaults
+    width: 852
+    height: 480
+
+    video_profile_level: 4.1
+    video_bitrate: 1300
+
+    audio_bitrate: 96

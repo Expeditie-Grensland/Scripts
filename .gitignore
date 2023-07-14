@@ -1,3 +1,6 @@
-# Negeer alles dat geen script is (een extensie heeft)
-/*.*
+# Negeer alles behalve
+*
 !/.gitignore
+!eg-*
+!eg_*
+!video2hls*

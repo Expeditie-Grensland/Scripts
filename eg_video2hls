@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+
+import argparse
+import itertools
+import json
+import os
+import subprocess
+from dataclasses import dataclass
+from pprint import pprint
+
+from dataclass_wizard import YAMLWizard
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_file", help="Config file in YAML format")
+    parser.add_argument("input_file", help="Input video file")
+    parser.add_argument("output_dir", help="Output directory")
+
+    return parser.parse_args()
+
+
+def run(command):
+    print(f"Running: {' '.join(command)}")
+
+    try:
+        return subprocess.run(
+            command, capture_output=True, check=True, encoding="utf-8"
+        ).stdout
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError(
+            f"{str(ex)}\n\nOutput:\n{ex.stdout}\nError:\n{ex.stderr}"
+        ) from None
+
+
+@dataclass
+class InputInfo:
+    file: str
+    video_index: int
+    audio_index: int
+    width: int
+    height: int
+    fps: float
+    audio_samplerate: int
+
+    def ratio(this) -> float:
+        return this.width / this.height
+
+
+def get_input_info(input_file: str) -> InputInfo:
+    result = run(
+        [
+            "ffprobe",
+            "-loglevel",
+            "warning",
+            "-hide_banner",
+            "-print_format",
+            "json",
+            "-show_entries",
+            "format=duration:streams",
+            input_file,
+        ]
+    )
+
+    info = json.loads(result)
+
+    video = next(x for x in info["streams"] if x["codec_type"] == "video")
+    audio = next(x for x in info["streams"] if x["codec_type"] == "audio")
+
+    return InputInfo(
+        file=input_file,
+        video_index=video["index"],
+        audio_index=audio["index"],
+        width=int(video["width"]),
+        height=int(video["height"]),
+        fps=float(video["r_frame_rate"].split("/")[0])
+        / float(video["r_frame_rate"].split("/")[1]),
+        audio_samplerate=int(audio["sample_rate"]),
+    )
+
+
+@dataclass
+class VideoOutput:
+    name: str
+    width: int
+    height: int
+
+    video_codec: str
+    video_profile: str
+    video_profile_level: str
+    video_bitrate: int
+
+    audio_codec: str
+    audio_profile: str
+    audio_bitrate: int
+
+    def args(this, input_info: InputInfo) -> list[str]:
+        return [
+            "-map",
+            f"0:{input_info.video_index}",
+            "-vf",
+            f"scale={this.width}:-2,format=yuv420p",
+            "-c:v",
+            this.video_codec,
+            "-profile:v",
+            this.video_profile,
+            "-level:v",
+            this.video_profile_level,
+            "-b:v",
+            f"{this.video_bitrate}k",
+            "-maxrate:v",
+            f"{this.video_bitrate}k",
+            "-bufsize:v",
+            f"{this.video_bitrate  * 1.5}k",
+            "-map",
+            f"0:{input_info.audio_index}",
+            "-c:a",
+            this.audio_codec,
+            "-ar",
+            f"{input_info.audio_samplerate}",
+            "-profile:a",
+            this.audio_profile,
+            "-b:a",
+            f"{this.audio_bitrate}k",
+        ]
+
+
+@dataclass
+class Mp4FileOutput(VideoOutput):
+    def args(this, input_info: InputInfo) -> list[str]:
+        return (
+            ["-f", "mp4"]
+            + super().args(input_info)
+            + ["-movflags", "+faststart", f"{this.name}.mp4"]
+        )
+
+
+@dataclass
+class HlsStreamOutput(VideoOutput):
+    hls_type: str
+    hls_duration: int
+
+    def args(this, input_info: InputInfo) -> list[str]:
+        return (
+            ["-f", "hls"]
+            + super().args(input_info)
+            + [
+                "-hls_time",
+                f"{this.hls_duration}",
+                "-g",
+                f"{input_info.fps * this.hls_duration}",
+                "-keyint_min",
+                f"{input_info.fps * this.hls_duration}",
+                "-hls_playlist_type",
+                "vod",
+                "-hls_list_size",
+                "0",
+                "-hls_segment_type",
+                this.hls_type,
+                "-hls_segment_filename",
+                f"{this.name}/%04d.ts",
+                f"{this.name}/index.m3u8",
+            ]
+        )
+
+
+@dataclass
+class OutputSettings(YAMLWizard):
+    mp4_files: list[Mp4FileOutput]
+    hls_streams: list[HlsStreamOutput]
+
+    @staticmethod
+    def parse(config_file: str, input_info: InputInfo):
+        output_settings = OutputSettings.from_yaml_file(config_file)
+        output_settings.filter_hls_by_size(input_info)
+        return output_settings
+
+    def filter_hls_by_size(this, input_info: InputInfo) -> list[str]:
+        this.hls_streams = [x for x in this.hls_streams if x.width <= input_info.width]
+
+    def args(this, input_info: InputInfo) -> list[str]:
+        return list(
+            itertools.chain.from_iterable(
+                [x.args(input_info) for x in (this.mp4_files + this.hls_streams)]
+            )
+        )
+
+    def dirs(this) -> list[str]:
+        return [x.name for x in this.hls_streams]
+
+
+def create_inf(input_info: InputInfo, output_settings: OutputSettings) -> None:
+    with open("index.m3u8", "w") as file:
+        file.write("#EXTM3U\n#EXT-X-VERSION:3\n")
+
+        for stream in output_settings.hls_streams:
+            info = get_input_info(f"{stream.name}/0000.ts")
+            file.write("#EXT-X-STREAM-INF:")
+            file.write(
+                f"BANDWIDTH={(stream.video_bitrate + stream.audio_bitrate) * 1000},"
+            )
+            file.write(f"RESOLUTION={info.width}x{info.height},")
+            file.write(f"FRAME-RATE={info.fps:.3f},")
+            file.write(f'NAME="{stream.name}"\n')
+            file.write(f"{stream.name}/index.m3u8\n")
+
+
+def convert(input_info: InputInfo, output_settings: OutputSettings) -> None:
+    for dir in output_settings.dirs():
+        os.makedirs(dir)
+
+    run(
+        [
+            "ffmpeg",
+            "-loglevel",
+            "warning",
+            "-hide_banner",
+            "-i",
+            input_info.file,
+        ]
+        + output_settings.args(input_info)
+    )
+
+    create_inf(input_info, output_settings)
+
+
+if __name__ == "__main__":
+    options = parse_args()
+
+    os.makedirs(options.output_dir)
+    input_file = os.path.relpath(options.input_file, options.output_dir)
+    config_file = os.path.relpath(options.config_file, options.output_dir)
+    os.chdir(options.output_dir)
+
+    input_info = get_input_info(input_file)
+    output_settings = OutputSettings.parse(config_file, input_info)
+
+    convert(input_info, output_settings)
+    # pprint(output_settings.get_args(input_info))
