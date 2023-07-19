@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Stel tijdzone in
+        uses: szenius/set-timezone@v1.2
+        with:
+          timezoneLinux: "Europe/Amsterdam"
+
       - name: GitHub opslag uitchecken
         uses: actions/checkout@v3
 
