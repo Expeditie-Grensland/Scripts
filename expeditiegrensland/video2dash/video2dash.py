@@ -8,27 +8,11 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from pprint import pprint
 
-import coloredlogs
 from dataclass_wizard import YAMLWizard
 
-
-def test_bestand_bestaat(pad):
-    if not os.path.isfile(pad):
-        raise argparse.ArgumentTypeError(f"'{pad}' bestaat niet")
-
-    return os.path.abspath(pad)
-
-
-def test_map_bestaat_leeg(pad):
-    if not os.path.isdir(pad):
-        raise argparse.ArgumentTypeError(f"'{pad}' bestaat niet")
-
-    if os.listdir(pad):
-        raise argparse.ArgumentTypeError(f"'{pad}' is niet leeg")
-
-    return os.path.abspath(pad)
+import expeditiegrensland.gemeenschappelijk.arg_types as eg_arg_types
+import expeditiegrensland.gemeenschappelijk.log as eg_log
 
 
 def lees_opties():
@@ -53,7 +37,7 @@ def lees_opties():
     config.add_argument(
         "--config",
         dest="config_bestand",
-        type=test_bestand_bestaat,
+        type=eg_arg_types.bestaand_bestand,
         help="Gebruik een ander configuratiebestand",
         metavar="BESTAND",
     )
@@ -82,14 +66,14 @@ def lees_opties():
 
     parser.add_argument(
         "invoer",
-        type=test_bestand_bestaat,
+        type=eg_arg_types.bestaand_bestand,
         help="Videobestand dat omgezet dient te worden",
     )
 
     parser.add_argument(
         "uitvoer",
-        type=test_map_bestaat_leeg,
-        help="Map om omgezette bestanden in op te slaan (dient leeg te zijn)",
+        type=eg_arg_types.lege_map,
+        help="Map om omgezette bestanden in op te slaan (dient leeg of afwezig te zijn)",
     )
 
     return parser.parse_args()
@@ -113,45 +97,25 @@ class ConfigBestandAudio:
 
 
 @dataclass
-class ConfigBestandDashVideo(ConfigBestandVideo):
-    pass
-
-
-@dataclass
-class ConfigBestandDashAudio(ConfigBestandAudio):
-    pass
-
-
-@dataclass
-class ConfigBestandTerugvalVideo(ConfigBestandVideo):
-    pass
-
-
-@dataclass
-class ConfigBestandTerugvalAudio(ConfigBestandAudio):
-    pass
-
-
-@dataclass
 class ConfigBestandTerugval:
     naam: str
-    video: ConfigBestandTerugvalVideo
-    audio: ConfigBestandTerugvalAudio
+    video: ConfigBestandVideo
+    audio: ConfigBestandAudio
 
 
 @dataclass
 class ConfigBestand(YAMLWizard):
     snelheid: str
-    dash_videos: list[ConfigBestandDashVideo]
-    dash_audios: list[ConfigBestandDashAudio]
+    dash_videos: list[ConfigBestandVideo]
+    dash_audios: list[ConfigBestandAudio]
     terugval: list[ConfigBestandTerugval]
 
 
 def lees_config(opties):
     if not opties.config_bestand:
         opties.config_bestand = os.path.join(
-            os.path.dirname(os.path.abspath(sys.argv[0])),
-            f"eg-video2dash.{opties.config}.yml",
+            os.path.abspath(os.path.dirname(__file__)),
+            f"configs/{opties.config}.yml",
         )
 
     logging.info(f"Configuratie wordt gelezen uit: '{opties.config_bestand}'")
@@ -327,16 +291,17 @@ def zet_om(opties, config: ConfigBestand):
             sys.exit(proces.returncode)
 
 
-if __name__ == "__main__":
+def main():
     opties = lees_opties()
 
-    print()
-    coloredlogs.install(
-        fmt="%(asctime)s %(levelname)s %(message)s\n",
-        level=("DEBUG" if opties.debug else "INFO"),
-    )
+    eg_log.configureer_log(opties.debug)
+
     logging.debug(f"Opties:\n{opties}")
 
     config = lees_config(opties)
 
     zet_om(opties, config)
+
+
+if __name__ == "__main__":
+    main()

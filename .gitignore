@@ -1,7 +1,4 @@
-# Negeer alles behalve
-*
-!/.gitignore
-!eg-*
-!eg_*
-!video2hls*
-!requirements.txt
+*.egg-info/
+__pycache__/
+/build/
+/dist/

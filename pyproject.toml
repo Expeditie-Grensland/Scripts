@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "expeditiegrensland_scripts"
+description = "Expeditie Grensland Scripts"
+requires-python = ">=3.6"
+dynamic = ["version"]
+authors = [{ name = "Martijn Atema", email = "martijn@atema.one" }]
+dependencies = ["coloredlogs", "dataclass-wizard[yaml]"]
+
+[project.scripts]
+eg-video2dash = "expeditiegrensland.video2dash.video2dash:main"
+
+[tool.setuptools.packages.find]
+include = ["expeditiegrensland", "expeditiegrensland.*"]
+
+[tool.setuptools.package-data]
+"expeditiegrensland.video2dash" = ["configs/*.yml"]
+
+[tool.setuptools.dynamic]
+version = { attr = "expeditiegrensland.__version__" }

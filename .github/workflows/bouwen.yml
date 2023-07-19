@@ -1,0 +1,54 @@
+name: Bouwen & uitgeven
+
+on: push
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Bouwen & uitgeven
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: GitHub opslag uitchecken
+        uses: actions/checkout@v3
+
+      - name: Installeer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Installeer benodigdheden
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Bouw het pakket
+        run: python -m build
+
+      - name: Bepaal de pakketversie
+        id: pkg_info
+        run: echo "versie=${find dist -name "*.tar.gz" | grep -Eo '[0-9]+(.[0-9]+)+' | head -n1}" >> "$GITHUB_OUTPUT"
+
+      - name: Check pakketversie
+        if: !steps.pkg_info.outputs.versie
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Versie kon niet bepaald worden")
+
+      - name: Hernoem pakketbestanden
+        run: |
+          mv dist/expeditiegrensland_scripts-${{ steps.pkg_info.outputs.versie }}.tar.gz expeditiegrensland_scripts.tar.gz
+          mv dist/expeditiegrensland_scripts-${{ steps.pkg_info.outputs.versie }}-py3-none-any.whl expeditiegrensland_scripts-py3.whl
+
+      - name: Geef uit op GitHub
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: ${{ steps.pkg_info.outputs.versie }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            expeditiegrensland_scripts.tar.gz
+            expeditiegrensland_scripts-py3.whl
+          fail_on_unmatched_files: true
