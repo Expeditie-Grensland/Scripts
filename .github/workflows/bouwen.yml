@@ -45,7 +45,7 @@ jobs:
       - name: Hernoem pakketbestanden
         run: |
           mv dist/expeditiegrensland_scripts-${{ steps.pkg_info.outputs.versie }}.tar.gz expeditiegrensland_scripts.tar.gz
-          mv dist/expeditiegrensland_scripts-${{ steps.pkg_info.outputs.versie }}-py3-none-any.whl expeditiegrensland_scripts-py3.whl
+          mv dist/expeditiegrensland_scripts-${{ steps.pkg_info.outputs.versie }}-py3-none-any.whl expeditiegrensland_scripts--py3-none-any.whl
 
       - name: Geef uit op GitHub
         uses: softprops/action-gh-release@v1
@@ -55,5 +55,5 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: |
             expeditiegrensland_scripts.tar.gz
-            expeditiegrensland_scripts-py3.whl
+            expeditiegrensland_scripts--py3-none-any.whl
           fail_on_unmatched_files: true

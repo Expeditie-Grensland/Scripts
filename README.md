@@ -9,5 +9,5 @@
 Met [pipx](https://pypa.github.io/pipx/):
 
 ```sh
-pipx install https://github.com/Expeditie-Grensland/Scripts/releases/latest/expeditiegrensland_scripts-py3.whl
+pipx install https://github.com/Expeditie-Grensland/Scripts/releases/latest/download/expeditiegrensland_scripts--py3-none-any.whl
 ```
