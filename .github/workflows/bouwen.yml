@@ -32,7 +32,7 @@ jobs:
         run: echo "versie=${find dist -name "*.tar.gz" | grep -Eo '[0-9]+(.[0-9]+)+' | head -n1}" >> "$GITHUB_OUTPUT"
 
       - name: Check pakketversie
-        if: !steps.pkg_info.outputs.versie
+        if: ${{ !steps.pkg_info.outputs.versie }}
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Versie kon niet bepaald worden")
