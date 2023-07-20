@@ -13,6 +13,9 @@ from dataclass_wizard import YAMLWizard
 
 import expeditiegrensland.gemeenschappelijk.arg_types as eg_arg_types
 import expeditiegrensland.gemeenschappelijk.log as eg_log
+import expeditiegrensland.gemeenschappelijk.commando as eg_commando
+
+logger = logging.getLogger("eg-video2dash")
 
 
 def lees_opties():
@@ -20,6 +23,7 @@ def lees_opties():
         prog="eg-video2dash",
         description=sys.modules[__name__].__doc__,
         allow_abbrev=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     config = parser.add_mutually_exclusive_group()
@@ -118,9 +122,9 @@ def lees_config(opties):
             f"configs/{opties.config}.yml",
         )
 
-    logging.info(f"Configuratie wordt gelezen uit: '{opties.config_bestand}'")
+    logger.info(f"Configuratie wordt gelezen uit: '{opties.config_bestand}'")
     config = ConfigBestand.from_yaml_file(opties.config_bestand)
-    logging.debug(f"Configuratie:\n{config}")
+    logger.debug(f"Configuratie:\n{config}")
 
     return config
 
@@ -161,7 +165,7 @@ def zet_om(opties, config: ConfigBestand):
         "hls.m3u8",
     ]
 
-    logging.debug(f"Basis opdracht:\n{opdracht}")
+    logger.debug(f"Basis opdracht:\n{opdracht}")
 
     stream_id = 0
 
@@ -200,7 +204,7 @@ def zet_om(opties, config: ConfigBestand):
         ]
 
         opdracht += video_opdracht
-        logging.debug(
+        logger.debug(
             f"Opdracht generatie (dash video stream {i}):\n{video}\n{video_opdracht}"
         )
 
@@ -222,7 +226,7 @@ def zet_om(opties, config: ConfigBestand):
         ]
 
         opdracht += audio_opdracht
-        logging.debug(
+        logger.debug(
             f"Opdracht generatie (dash audio stream {i}):\n{audio}\n{audio_opdracht}"
         )
 
@@ -259,7 +263,7 @@ def zet_om(opties, config: ConfigBestand):
         ]
 
         opdracht += video_opdracht
-        logging.debug(
+        logger.debug(
             f"Opdracht generatie (terugval video '{terugval.naam}'):\n{video}\n{video_opdracht}"
         )
 
@@ -275,32 +279,30 @@ def zet_om(opties, config: ConfigBestand):
         ]
 
         opdracht += audio_opdracht
-        logging.debug(
+        logger.debug(
             f"Opdracht generatie (terugval audio '{terugval.naam}'):\n{audio}\n{audio_opdracht}"
         )
 
         opdracht += ["-movflags", "+faststart", terugval.naam]
 
-        logging.debug(f"FFmpeg wordt gedraaid. Volledige opdracht:\n{opdracht}")
+        logger.info("FFmpeg wordt gedraaid")
 
-        proces = subprocess.Popen(opdracht)
-        proces.communicate()
-
-        if proces.returncode != 0:
-            logging.fatal("Er is een probleem opgetreden bij het draaien van FFmpeg")
-            sys.exit(proces.returncode)
+        eg_commando.draai(opdracht, logger)
 
 
 def main():
     opties = lees_opties()
 
-    eg_log.configureer_log(opties.debug)
+    eg_log.configureer_log(logger, opties.debug)
 
-    logging.debug(f"Opties:\n{opties}")
+    logger.debug(f"Opties:\n{opties}")
 
-    config = lees_config(opties)
+    try:
+        config = lees_config(opties)
 
-    zet_om(opties, config)
+        zet_om(opties, config)
+    except Exception as error:
+        eg_log.log_error(logger, error)
 
 
 if __name__ == "__main__":

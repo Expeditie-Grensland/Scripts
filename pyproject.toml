@@ -8,9 +8,10 @@ description = "Expeditie Grensland Scripts"
 requires-python = ">=3.6"
 dynamic = ["version"]
 authors = [{ name = "Martijn Atema", email = "martijn@atema.one" }]
-dependencies = ["coloredlogs", "dataclass-wizard[yaml]"]
+dependencies = ["boto3>=1.28.0", "coloredlogs", "dataclass-wizard[yaml]"]
 
 [project.scripts]
+eg-hernoemer = "expeditiegrensland.hernoemer.hernoemer:main"
 eg-video2dash = "expeditiegrensland.video2dash.video2dash:main"
 
 [tool.setuptools.packages.find]
