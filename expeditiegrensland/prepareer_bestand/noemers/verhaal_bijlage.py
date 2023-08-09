@@ -6,3 +6,6 @@ class VerhaalBijlageNoemer(Noemer):
 
     def __init__(self, slak: str):
         self.slak = slak
+
+    def noem(self, inputnaam: str) -> str:
+        return super().noem(inputnaam)

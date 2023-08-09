@@ -3,9 +3,7 @@
 import argparse
 from textwrap import dedent
 
-from matplotlib.pyplot import switch_backend
-
-from ..gemeenschappelijk.arg_types import bestaand_bestand, lege_map, slak
+from ..gemeenschappelijk.arg_types import bestaand_bestand, slak
 from ..gemeenschappelijk.maak_cli import maak_cli
 from .converteerders.achtergrond import AchtergrondConverteerder
 from .converteerders.afbeelding_bijlage import AfbeeldingBijlageConverteerder
@@ -148,15 +146,15 @@ def converteer_opties(opties: argparse.Namespace) -> PrepareerBestandOpties:
         raise RuntimeError("Kan geen geldige converteerder vinden")
 
     if opties.soort == "film":
-        noemer = FilmNoemer()
+        noemer = FilmNoemer(opties.slak)
     elif opties.soort == "achtergrond":
-        noemer = AchtergrondNoemer()
+        noemer = AchtergrondNoemer(opties.slak)
     elif opties.soort == "bijlage" and opties.itemtype == "woord":
-        noemer = WoordBijlageNoemer
+        noemer = WoordBijlageNoemer(opties.slak)
     elif opties.soort == "bijlage" and opties.itemtype == "citaat":
-        noemer = CitaatBijlageNoemer
+        noemer = CitaatBijlageNoemer(opties.slak)
     elif opties.soort == "bijlage" and opties.itemtype == "verhaal":
-        noemer = VerhaalBijlageNoemer
+        noemer = VerhaalBijlageNoemer(opties.slak)
     else:
         raise RuntimeError("Kan geen geldige noemer vinden")
 
@@ -166,11 +164,11 @@ def converteer_opties(opties: argparse.Namespace) -> PrepareerBestandOpties:
 def main():
     maak_cli(
         naam="eg-prepareer-bestand",
-        beschrijving=None,  # FIXME
+        beschrijving="",  # FIXME
         configureer_parser=configureer_parser,
         vereiste_programmas=["ffmpeg"],  # FIXME
         converteer_opties=converteer_opties,
-        draaier=None,  # FIXME
+        draaier=lambda x: None,  # FIXME
     )
 
 

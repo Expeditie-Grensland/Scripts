@@ -3,21 +3,21 @@ from argparse import ArgumentTypeError
 import re
 
 
-def bestaand_pad(pad):
+def bestaand_pad(pad: str):
     if not os.path.exists(pad):
         raise ArgumentTypeError(f"'{pad}' bestaat niet")
 
     return os.path.abspath(pad)
 
 
-def bestaand_bestand(pad):
+def bestaand_bestand(pad: str):
     if not os.path.isfile(pad):
         raise ArgumentTypeError(f"'{pad}' bestaat niet")
 
     return os.path.abspath(pad)
 
 
-def een_map(pad):
+def een_map(pad: str):
     if os.path.exists(pad) and not os.path.isdir(pad):
         raise ArgumentTypeError(f"'{pad}' is geen map")
 
@@ -30,7 +30,7 @@ def een_map(pad):
     return os.path.abspath(pad)
 
 
-def lege_map(pad):
+def lege_map(pad: str):
     de_map = een_map(pad)
 
     if os.listdir(de_map):
@@ -39,7 +39,7 @@ def lege_map(pad):
     return de_map
 
 
-def slak(tekst: str) -> str:
+def slak(tekst: str):
     m = re.compile("^[a-z-]+$")
 
     if not m.match(tekst):
