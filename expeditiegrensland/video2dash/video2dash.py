@@ -1,90 +1,20 @@
-#!/usr/bin/env python3
-
 """Zet een videobestand om naar dash bestanden voor gebruik op de website"""
 
-import argparse
 import logging
 import os
-import subprocess
-import sys
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from functools import cached_property
 
 from dataclass_wizard import YAMLWizard
 
-import expeditiegrensland.gemeenschappelijk.arg_types as eg_arg_types
-import expeditiegrensland.gemeenschappelijk.log as eg_log
-import expeditiegrensland.gemeenschappelijk.commando as eg_commando
+from ..gemeenschappelijk.commando import draai
 
-logger = logging.getLogger("eg-video2dash")
-
-
-def lees_opties():
-    parser = argparse.ArgumentParser(
-        prog="eg-video2dash",
-        description=sys.modules[__name__].__doc__,
-        allow_abbrev=False,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    config = parser.add_mutually_exclusive_group()
-
-    config.set_defaults(config="film")
-
-    config.add_argument(
-        "--film",
-        dest="config",
-        action="store_const",
-        const="film",
-        help="Gebruik configuratiebestand voor films (standaard)",
-    )
-
-    config.add_argument(
-        "--config",
-        dest="config_bestand",
-        type=eg_arg_types.bestaand_bestand,
-        help="Gebruik een ander configuratiebestand",
-        metavar="BESTAND",
-    )
-
-    parser.add_argument(
-        "--max-resolutie",
-        type=int,
-        default=1080,
-        help="Maximale resolutie (in verticale pixels) om bestanden in te produceren (standaard: %(default)s)",
-        metavar="HOOGTE",
-    )
-
-    parser.add_argument(
-        "--beeldsnelheid",
-        type=int,
-        default=60,
-        help="Beeldsnelheid van het invoer videobestand (standaard: %(default)s)",
-        metavar="BPS",
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Schrijf foutopsporingsinformatie naar de terminal",
-    )
-
-    parser.add_argument(
-        "invoer",
-        type=eg_arg_types.bestaand_bestand,
-        help="Videobestand dat omgezet dient te worden",
-    )
-
-    parser.add_argument(
-        "uitvoer",
-        type=eg_arg_types.lege_map,
-        help="Map om omgezette bestanden in op te slaan (dient leeg of afwezig te zijn)",
-    )
-
-    return parser.parse_args()
+logger = logging.getLogger("__main__")
 
 
 @dataclass
-class ConfigBestandVideo:
+class ConfigVideo:
     codec: str
     profiel: str
     bitsnelheid: int
@@ -94,42 +24,77 @@ class ConfigBestandVideo:
 
 
 @dataclass
-class ConfigBestandAudio:
+class ConfigAudio:
     codec: str
     profiel: str
     bitsnelheid: int
 
 
 @dataclass
-class ConfigBestandTerugval:
+class ConfigTerugval:
     naam: str
-    video: ConfigBestandVideo
-    audio: ConfigBestandAudio
+    video: ConfigVideo
+    audio: ConfigAudio
 
 
 @dataclass
-class ConfigBestand(YAMLWizard):
+class Config(YAMLWizard):
     snelheid: str
-    dash_videos: list[ConfigBestandVideo]
-    dash_audios: list[ConfigBestandAudio]
-    terugval: list[ConfigBestandTerugval]
+    dash_videos: list[ConfigVideo]
+    dash_audios: list[ConfigAudio]
+    terugval: list[ConfigTerugval]
 
 
-def lees_config(opties):
-    if not opties.config_bestand:
-        opties.config_bestand = os.path.join(
+class ConfigBestand(ABC):
+    @abstractmethod
+    def krijg_pad(self) -> str:
+        raise NotImplementedError()
+
+    @cached_property
+    def config(self) -> Config:
+        pad = self.krijg_pad()
+        logger.info(f"Configuratie wordt gelezen uit: '{pad}'")
+        config = Config.from_yaml_file(self.krijg_pad())
+        logger.debug(f"Configuratie:\n{config}")
+        return config
+
+
+class ConfigBestandIngebouwd(ConfigBestand):
+    naam: str
+
+    def __init__(self, naam: str):
+        self.naam = naam
+
+    def krijg_pad(self) -> str:
+        return os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
-            f"configs/{opties.config}.yml",
+            f"configs/{self.naam}.yml",
         )
 
-    logger.info(f"Configuratie wordt gelezen uit: '{opties.config_bestand}'")
-    config = ConfigBestand.from_yaml_file(opties.config_bestand)
-    logger.debug(f"Configuratie:\n{config}")
 
-    return config
+class ConfigBestandExtern(ConfigBestand):
+    pad: str
+
+    def __init__(self, pad: str):
+        self.pad = pad
+
+    def krijg_pad(self) -> str:
+        return self.pad
 
 
-def zet_om(opties, config: ConfigBestand):
+@dataclass
+class Video2DashOpties:
+    invoer: str
+    uitvoer: str
+    max_resolutie: int
+    beeldsnelheid: int
+    config_bestand: ConfigBestand
+    debug: bool
+
+
+def video2dash(opties: Video2DashOpties):
+    config = opties.config_bestand.config
+
     os.chdir(opties.uitvoer)
 
     opdracht = ["ffmpeg", "-hide_banner"]
@@ -287,25 +252,4 @@ def zet_om(opties, config: ConfigBestand):
 
         logger.info("FFmpeg wordt gedraaid")
 
-        eg_commando.draai(opdracht, logger)
-
-
-def main():
-    opties = lees_opties()
-
-    eg_log.configureer_log(logger, opties.debug)
-
-    logger.debug(f"Opties:\n{opties}")
-
-    try:
-        eg_commando.vereis_programma("ffmpeg")
-
-        config = lees_config(opties)
-
-        zet_om(opties, config)
-    except Exception as error:
-        eg_log.log_error(logger, error)
-
-
-if __name__ == "__main__":
-    main()
+        draai(opdracht)

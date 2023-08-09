@@ -1,8 +1,10 @@
+import logging
 import subprocess
 import shutil
 
 
-def draai_pijp(commandos, logger):
+def draai_pijp(commandos):
+    logger = logging.getLogger("__main__")
     logger.debug("Volledig commando:\n" + " | \n".join(map(str, commandos)))
 
     processen = None
@@ -26,8 +28,8 @@ def draai_pijp(commandos, logger):
     return stdout
 
 
-def draai(commando, logger):
-    return draai_pijp([commando], logger)
+def draai(commando):
+    return draai_pijp([commando])
 
 
 def vereis_programma(programma):

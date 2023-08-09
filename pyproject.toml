@@ -11,8 +11,8 @@ authors = [{ name = "Martijn Atema", email = "martijn@atema.one" }]
 dependencies = ["boto3>=1.28.0", "coloredlogs", "dataclass-wizard[yaml]"]
 
 [project.scripts]
-eg-hernoemer = "expeditiegrensland.hernoemer.hernoemer:main"
-eg-video2dash = "expeditiegrensland.video2dash.video2dash:main"
+eg-hernoemer = "expeditiegrensland.hernoemer.cli:main"
+eg-video2dash = "expeditiegrensland.video2dash.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["expeditiegrensland", "expeditiegrensland.*"]
