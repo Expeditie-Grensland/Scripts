@@ -212,6 +212,9 @@ def main():
     logger.debug(f"Opties:\n{opties}")
 
     try:
+        eg_commando.vereis_programma("tar")
+        eg_commando.vereis_programma("sha1sum")
+        
         hernoem(opties.invoer, opties)
     except Exception as error:
         eg_log.log_error(logger, error)

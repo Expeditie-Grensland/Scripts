@@ -298,6 +298,8 @@ def main():
     logger.debug(f"Opties:\n{opties}")
 
     try:
+        eg_commando.vereis_programma("ffmpeg")
+
         config = lees_config(opties)
 
         zet_om(opties, config)

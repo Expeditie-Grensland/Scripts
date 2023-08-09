@@ -1,5 +1,5 @@
-import logging
 import subprocess
+import shutil
 
 
 def draai_pijp(commandos, logger):
@@ -28,3 +28,8 @@ def draai_pijp(commandos, logger):
 
 def draai(commando, logger):
     return draai_pijp([commando], logger)
+
+
+def vereis_programma(programma):
+    if shutil.which(programma) is None:
+        raise Exception(f"Dit programma heeft '{programma}' nodig")
