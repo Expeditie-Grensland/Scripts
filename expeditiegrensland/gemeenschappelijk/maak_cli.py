@@ -25,7 +25,7 @@ def maak_cli(
         prog=naam,
         description=beschrijving,
         allow_abbrev=False,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     configureer_parser(parser)
