@@ -55,6 +55,8 @@ class ConfigBestand(ABC):
         pad = self.krijg_pad()
         logger.info(f"Configuratie wordt gelezen uit: '{pad}'")
         config = Config.from_yaml_file(self.krijg_pad())
+        if isinstance(config, list):
+            config = config[0]
         logger.debug(f"Configuratie:\n{config}")
         return config
 
@@ -94,7 +96,7 @@ class Video2DashOpties:
 
 def video2dash(opties: Video2DashOpties):
     vereis_programma("ffmpeg")
-    
+
     config = opties.config_bestand.config
 
     os.chdir(opties.uitvoer)

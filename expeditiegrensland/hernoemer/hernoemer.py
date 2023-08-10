@@ -143,7 +143,7 @@ def lees_hash(pad):
     else:
         hash_commando = [["sha1sum", pad]]
 
-    hash = eg_commando.draai_pijp(hash_commando, logger).split(" ")[0][:8]
+    hash = eg_commando.draai_pijp(hash_commando).split(" ")[0][:8]
 
     return hash
 
