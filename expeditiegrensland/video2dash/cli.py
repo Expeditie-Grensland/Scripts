@@ -2,9 +2,12 @@
 
 import argparse
 
-from . import video2dash
-from ..gemeenschappelijk.maak_cli import maak_cli
 from ..gemeenschappelijk.arg_types import bestaand_bestand, lege_map
+from ..gemeenschappelijk.maak_cli import maak_cli
+from .configs.film import video2dash_film_config
+from .video2dash import Video2DashOpties
+from .video2dash import __doc__ as doc_str
+from .video2dash import video2dash
 
 
 def configureer_parser(parser: argparse.ArgumentParser):
@@ -18,14 +21,6 @@ def configureer_parser(parser: argparse.ArgumentParser):
         action="store_const",
         const="film",
         help="Gebruik configuratiebestand voor films (standaard)",
-    )
-
-    config.add_argument(
-        "--config",
-        dest="config_bestand",
-        type=bestaand_bestand,
-        help="Gebruik een ander configuratiebestand",
-        metavar="BESTAND",
     )
 
     parser.add_argument(
@@ -57,29 +52,28 @@ def configureer_parser(parser: argparse.ArgumentParser):
     )
 
 
-def converteer_opties(opties: argparse.Namespace) -> video2dash.Video2DashOpties:
-    if opties.config_bestand:
-        config_bestand = video2dash.ConfigBestandExtern(opties.config_bestand)
+def converteer_opties(opties: argparse.Namespace) -> Video2DashOpties:
+    if opties.config == "film":
+        config = video2dash_film_config
     else:
-        config_bestand = video2dash.ConfigBestandIngebouwd(opties.config)
+        raise RuntimeError("Geen geldige config gevonden")
 
-    return video2dash.Video2DashOpties(
+    return Video2DashOpties(
         invoer=opties.invoer,
         uitvoer=opties.uitvoer,
         max_resolutie=opties.max_resolutie,
         beeldsnelheid=opties.beeldsnelheid,
-        config_bestand=config_bestand,
-        debug=opties.debug,
+        config=config,
     )
 
 
 def main():
     maak_cli(
         naam="eg-video2dash",
-        beschrijving=video2dash.__doc__,
+        beschrijving=doc_str,
         configureer_parser=configureer_parser,
         converteer_opties=converteer_opties,
-        draaier=video2dash.video2dash,
+        draaier=video2dash,
     )
 
 

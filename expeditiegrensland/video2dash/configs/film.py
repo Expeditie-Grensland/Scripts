@@ -1,0 +1,87 @@
+from .basis import (
+    Video2DashConfig,
+    Video2DashConfigVideo,
+    Video2DashConfigAudio,
+    Video2DashConfigTerugval,
+)
+
+
+video2dash_film_config = Video2DashConfig(
+    snelheid="veryslow",
+    dash_videos=[
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=14000,
+            breedte=3840,
+            hoogte=2160,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=10000,
+            breedte=2560,
+            hoogte=1440,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=8000,
+            breedte=1920,
+            hoogte=1080,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=4000,
+            breedte=1280,
+            hoogte=720,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=1500,
+            breedte=852,
+            hoogte=480,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=800,
+            breedte=640,
+            hoogte=360,
+            beeldsnelheid=0,
+        ),
+        Video2DashConfigVideo(
+            codec="libx264",
+            profiel="high",
+            bitsnelheid=300,
+            breedte=480,
+            hoogte=270,
+            beeldsnelheid=0,
+        ),
+    ],
+    dash_audios=[
+        Video2DashConfigAudio(codec="aac", profiel="aac_low", bitsnelheid=192),
+        Video2DashConfigAudio(codec="aac", profiel="aac_low", bitsnelheid=96),
+    ],
+    terugval=[
+        Video2DashConfigTerugval(
+            naam="terugval.mp4",
+            video=Video2DashConfigVideo(
+                codec="libx264",
+                profiel="main",
+                bitsnelheid=2000,
+                breedte=1280,
+                hoogte=720,
+                beeldsnelheid=0,
+            ),
+            audio=Video2DashConfigAudio(codec="aac", profiel="aac_low", bitsnelheid=96),
+        )
+    ],
+)

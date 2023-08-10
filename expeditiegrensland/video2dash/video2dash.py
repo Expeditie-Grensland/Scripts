@@ -2,86 +2,12 @@
 
 import logging
 import os
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from functools import cached_property
-
-from dataclass_wizard import YAMLWizard
 
 from ..gemeenschappelijk.commando import draai, vereis_programma
+from .configs.basis import Video2DashConfig
 
 logger = logging.getLogger("__main__")
-
-
-@dataclass
-class ConfigVideo:
-    codec: str
-    profiel: str
-    bitsnelheid: int
-    breedte: int
-    hoogte: int
-    beeldsnelheid: int
-
-
-@dataclass
-class ConfigAudio:
-    codec: str
-    profiel: str
-    bitsnelheid: int
-
-
-@dataclass
-class ConfigTerugval:
-    naam: str
-    video: ConfigVideo
-    audio: ConfigAudio
-
-
-@dataclass
-class Config(YAMLWizard):
-    snelheid: str
-    dash_videos: list[ConfigVideo]
-    dash_audios: list[ConfigAudio]
-    terugval: list[ConfigTerugval]
-
-
-class ConfigBestand(ABC):
-    @abstractmethod
-    def krijg_pad(self) -> str:
-        raise NotImplementedError()
-
-    @cached_property
-    def config(self) -> Config:
-        pad = self.krijg_pad()
-        logger.info(f"Configuratie wordt gelezen uit: '{pad}'")
-        config = Config.from_yaml_file(self.krijg_pad())
-        if isinstance(config, list):
-            config = config[0]
-        logger.debug(f"Configuratie:\n{config}")
-        return config
-
-
-class ConfigBestandIngebouwd(ConfigBestand):
-    naam: str
-
-    def __init__(self, naam: str):
-        self.naam = naam
-
-    def krijg_pad(self) -> str:
-        return os.path.join(
-            os.path.abspath(os.path.dirname(__file__)),
-            f"configs/{self.naam}.yml",
-        )
-
-
-class ConfigBestandExtern(ConfigBestand):
-    pad: str
-
-    def __init__(self, pad: str):
-        self.pad = pad
-
-    def krijg_pad(self) -> str:
-        return self.pad
 
 
 @dataclass
@@ -90,26 +16,21 @@ class Video2DashOpties:
     uitvoer: str
     max_resolutie: int
     beeldsnelheid: int
-    config_bestand: ConfigBestand
-    debug: bool
+    config: Video2DashConfig
 
 
 def video2dash(opties: Video2DashOpties):
     vereis_programma("ffmpeg")
 
-    config = opties.config_bestand.config
+    config = opties.config
 
     os.chdir(opties.uitvoer)
 
-    opdracht = ["ffmpeg", "-hide_banner"]
-
-    if not opties.debug:
-        opdracht += [
-            "-loglevel",
-            "warning",
-        ]
-
-    opdracht += [
+    opdracht = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "info",
         "-i",
         opties.invoer,
         "-preset",
