@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import argparse
+from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
 from textwrap import dedent
 
 from ..gemeenschappelijk.arg_types import bestaand_bestand, slak
 from ..gemeenschappelijk.maak_cli import maak_cli
-from . import prepareer_bestand
 from .converteerders import (
     achtergrond_converteerder_fabriek,
     afbeelding_bijlage_converteerder_fabriek,
@@ -26,9 +25,10 @@ from .noemers import (
     woord_audio_noemer_fabriek,
     woord_video_noemer_fabriek,
 )
+from .prepareer_bestand import prepareer_bestand
 
 
-def configureer_parser(parser: argparse.ArgumentParser):
+def configureer_parser(parser: ArgumentParser):
     subparsers = parser.add_subparsers(
         title="Soort",
         description=dedent(
@@ -49,7 +49,7 @@ def configureer_parser(parser: argparse.ArgumentParser):
         "film",
         help="Film van een expeditie",
         allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=RawTextHelpFormatter,
     )
 
     film_parser.add_argument(
@@ -78,7 +78,7 @@ def configureer_parser(parser: argparse.ArgumentParser):
         "achtergrond",
         help="Achtergrondafbeelding voor een expeditie",
         allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=RawTextHelpFormatter,
     )
 
     achtergrond_parser.add_argument(
@@ -107,7 +107,7 @@ def configureer_parser(parser: argparse.ArgumentParser):
         "bijlage",
         help="Bijlage bij een woord, citaat of expeditieverhaal",
         allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=RawTextHelpFormatter,
     )
 
     bijlage_parser.add_argument(
@@ -141,18 +141,18 @@ def configureer_parser(parser: argparse.ArgumentParser):
     )
 
 
-def converteer_opties(opties: argparse.Namespace):
+def draai_module(opties: Namespace):
     converteerder = None
-    naam = None
+    noemer = None
 
     match opties.soort:
         case "film":
             converteerder = film_converteerder_fabriek()
-            naam = film_noemer_fabiek(opties.slak)
+            noemer = film_noemer_fabiek(opties.slak)
 
         case "achtergrond":
             converteerder = achtergrond_converteerder_fabriek()
-            naam = achtergrond_noemer_fabriek(opties.slak)
+            noemer = achtergrond_noemer_fabriek(opties.slak)
 
         case "bijlage":
             match opties.formaat:
@@ -160,11 +160,11 @@ def converteer_opties(opties: argparse.Namespace):
                     converteerder = afbeelding_bijlage_converteerder_fabriek()
                     match opties.itemtype:
                         case "woord":
-                            naam = woord_afbeelding_noemer_fabriek(opties.slak)
+                            noemer = woord_afbeelding_noemer_fabriek(opties.slak)
                         case "citaat":
-                            naam = citaat_afbeelding_noemer_fabriek(opties.slak)
+                            noemer = citaat_afbeelding_noemer_fabriek(opties.slak)
                         case "verhaal":
-                            naam = verhaal_afbeelding_noemer_fabriek(opties.slak)
+                            noemer = verhaal_afbeelding_noemer_fabriek(opties.slak)
                         case _:
                             pass
 
@@ -172,11 +172,11 @@ def converteer_opties(opties: argparse.Namespace):
                     converteerder = video_bijlage_converteerder_fabriek()
                     match opties.itemtype:
                         case "woord":
-                            naam = woord_video_noemer_fabriek(opties.slak)
+                            noemer = woord_video_noemer_fabriek(opties.slak)
                         case "citaat":
-                            naam = citaat_video_noemer_fabriek(opties.slak)
+                            noemer = citaat_video_noemer_fabriek(opties.slak)
                         case "verhaal":
-                            naam = verhaal_video_noemer_fabriek(opties.slak)
+                            noemer = verhaal_video_noemer_fabriek(opties.slak)
                         case _:
                             pass
 
@@ -184,11 +184,11 @@ def converteer_opties(opties: argparse.Namespace):
                     converteerder = audio_bijlage_converteerder_fabriek()
                     match opties.itemtype:
                         case "woord":
-                            naam = woord_audio_noemer_fabriek(opties.slak)
+                            noemer = woord_audio_noemer_fabriek(opties.slak)
                         case "citaat":
-                            naam = citaat_audio_noemer_fabriek(opties.slak)
+                            noemer = citaat_audio_noemer_fabriek(opties.slak)
                         case "verhaal":
-                            naam = verhaal_audio_noemer_fabriek(opties.slak)
+                            noemer = verhaal_audio_noemer_fabriek(opties.slak)
                         case _:
                             pass
                 case _:
@@ -197,24 +197,21 @@ def converteer_opties(opties: argparse.Namespace):
         case _:
             pass
 
-    if not naam:
+    if not noemer:
         raise RuntimeError("Kan geen geldige noemer vinden")
 
     if not converteerder:
         raise RuntimeError("Kan geen geldige converteerder vinden")
 
-    return prepareer_bestand.PrepareerBestandOpties(
-        invoer=opties.invoer, converteerder=converteerder, noemer=naam
-    )
+    prepareer_bestand(invoer=opties.invoer, converteerder=converteerder, noemer=noemer)
 
 
 def main():
     maak_cli(
         naam="eg-prepareer-bestand",
-        beschrijving=prepareer_bestand.__doc__,
+        beschrijving="Prepareer bestand",
         configureer_parser=configureer_parser,
-        converteer_opties=converteer_opties,
-        draaier=prepareer_bestand.prepareer_bestand,
+        draai_module=draai_module,
     )
 
 

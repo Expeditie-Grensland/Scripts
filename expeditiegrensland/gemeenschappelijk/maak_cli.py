@@ -1,30 +1,25 @@
-import argparse
-import logging
 import traceback
+from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
 from collections.abc import Callable
-from typing import TypeVar
+from logging import getLogger
 
 import coloredlogs
-from expeditiegrensland.gemeenschappelijk.commando import vereis_programma
-
-T = TypeVar("T")
 
 
 def maak_cli(
     *,
     naam: str,
     beschrijving: str,
-    configureer_parser: Callable[[argparse.ArgumentParser], None],
-    converteer_opties: Callable[[argparse.Namespace], T],
-    draaier: Callable[[T], None],
+    configureer_parser: Callable[[ArgumentParser], None],
+    draai_module: Callable[[Namespace], None],
 ):
-    logger = logging.getLogger("__main__")
+    logger = getLogger("__main__")
 
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         prog=naam,
         description=beschrijving,
         allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=RawTextHelpFormatter,
     )
 
     configureer_parser(parser)
@@ -35,22 +30,19 @@ def maak_cli(
         help="Schrijf foutopsporingsinformatie naar de terminal",
     )
 
-    ruwe_opties = parser.parse_args()
+    opties = parser.parse_args()
 
     print()
     coloredlogs.install(
         logger=logger,
         fmt="%(asctime)s %(levelname)s %(message)s\n",
-        level=("DEBUG" if ruwe_opties.debug else "INFO"),
+        level=("DEBUG" if opties.debug else "INFO"),
     )
 
-    logger.debug(f"Ruwe opties:\n{ruwe_opties}")
+    logger.debug(f"Ruwe opties:\n{opties}")
 
     try:
-        opties = converteer_opties(ruwe_opties)
-        logger.debug(f"Opties:\n{opties}")
-
-        draaier(opties)
+        draai_module(opties)
     except Exception as error:
         logger.critical(error)
         logger.debug(

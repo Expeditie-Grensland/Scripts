@@ -1,10 +1,9 @@
 from .basis import (
     Video2DashConfig,
-    Video2DashConfigVideo,
     Video2DashConfigAudio,
     Video2DashConfigTerugval,
+    Video2DashConfigVideo,
 )
-
 
 video2dash_film_config = Video2DashConfig(
     snelheid="veryslow",

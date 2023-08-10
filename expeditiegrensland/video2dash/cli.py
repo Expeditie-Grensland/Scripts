@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
-import argparse
+from argparse import ArgumentParser, Namespace
 
 from ..gemeenschappelijk.arg_types import bestaand_bestand, lege_map
 from ..gemeenschappelijk.maak_cli import maak_cli
 from .configs.film import video2dash_film_config
-from .video2dash import Video2DashOpties
-from .video2dash import __doc__ as doc_str
 from .video2dash import video2dash
 
 
-def configureer_parser(parser: argparse.ArgumentParser):
+def configureer_parser(parser: ArgumentParser):
     config = parser.add_mutually_exclusive_group()
 
     config.set_defaults(config="film")
@@ -52,13 +50,13 @@ def configureer_parser(parser: argparse.ArgumentParser):
     )
 
 
-def converteer_opties(opties: argparse.Namespace) -> Video2DashOpties:
+def draai_module(opties: Namespace):
     if opties.config == "film":
         config = video2dash_film_config
     else:
         raise RuntimeError("Geen geldige config gevonden")
 
-    return Video2DashOpties(
+    video2dash(
         invoer=opties.invoer,
         uitvoer=opties.uitvoer,
         max_resolutie=opties.max_resolutie,
@@ -70,10 +68,9 @@ def converteer_opties(opties: argparse.Namespace) -> Video2DashOpties:
 def main():
     maak_cli(
         naam="eg-video2dash",
-        beschrijving=doc_str,
+        beschrijving="Zet een videobestand om naar dash bestanden voor gebruik op de website",
         configureer_parser=configureer_parser,
-        converteer_opties=converteer_opties,
-        draaier=video2dash,
+        draai_module=draai_module,
     )
 
 

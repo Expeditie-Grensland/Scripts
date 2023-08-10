@@ -1,30 +1,22 @@
-"""Zet een videobestand om naar dash bestanden voor gebruik op de website"""
-
-import logging
-import os
-from dataclasses import dataclass
+from os import chdir, mkdir
+from logging import getLogger
 
 from ..gemeenschappelijk.commando import draai, vereis_programma
 from .configs.basis import Video2DashConfig
 
-logger = logging.getLogger("__main__")
+logger = getLogger("__main__")
 
 
-@dataclass
-class Video2DashOpties:
-    invoer: str
-    uitvoer: str
-    max_resolutie: int
-    beeldsnelheid: int
-    config: Video2DashConfig
-
-
-def video2dash(opties: Video2DashOpties):
+def video2dash(
+    invoer: str,
+    uitvoer: str,
+    max_resolutie: int,
+    beeldsnelheid: int,
+    config: Video2DashConfig,
+):
     vereis_programma("ffmpeg")
 
-    config = opties.config
-
-    os.chdir(opties.uitvoer)
+    chdir(uitvoer)
 
     opdracht = [
         "ffmpeg",
@@ -32,7 +24,7 @@ def video2dash(opties: Video2DashOpties):
         "-loglevel",
         "info",
         "-i",
-        opties.invoer,
+        invoer,
         "-preset",
         config.snelheid,
         "-f",
@@ -61,13 +53,10 @@ def video2dash(opties: Video2DashOpties):
 
     i = 0
     for video in config.dash_videos:
-        if (
-            video.beeldsnelheid > opties.beeldsnelheid
-            or video.hoogte > opties.max_resolutie
-        ):
+        if video.beeldsnelheid > beeldsnelheid or video.hoogte > max_resolutie:
             continue
 
-        os.mkdir(f"stream-{stream_id}")
+        mkdir(f"stream-{stream_id}")
         stream_id += 1
 
         video_opdracht = [
@@ -86,11 +75,11 @@ def video2dash(opties: Video2DashOpties):
             f"-filter:v:{i}",
             f"scale={video.breedte}:{video.hoogte},format=yuv420p",
             f"-r:v:{i}",
-            f"{video.beeldsnelheid or opties.beeldsnelheid}",
+            f"{video.beeldsnelheid or beeldsnelheid}",
             f"-g:v:{i}",
-            f"{(video.beeldsnelheid or opties.beeldsnelheid) * 2}",
+            f"{(video.beeldsnelheid or beeldsnelheid) * 2}",
             f"-keyint_min:v:{i}",
-            f"{(video.beeldsnelheid or opties.beeldsnelheid)}",
+            f"{(video.beeldsnelheid or beeldsnelheid)}",
         ]
 
         opdracht += video_opdracht
@@ -101,7 +90,7 @@ def video2dash(opties: Video2DashOpties):
         i += 1
 
     for i, audio in enumerate(config.dash_audios):
-        os.mkdir(f"stream-{stream_id}")
+        mkdir(f"stream-{stream_id}")
         stream_id += 1
 
         audio_opdracht = [
@@ -125,10 +114,7 @@ def video2dash(opties: Video2DashOpties):
     for terugval in config.terugval:
         video, audio = terugval.video, terugval.audio
 
-        if (
-            video.beeldsnelheid > opties.beeldsnelheid
-            or video.hoogte > opties.max_resolutie
-        ):
+        if video.beeldsnelheid > beeldsnelheid or video.hoogte > max_resolutie:
             continue
 
         opdracht += ["-f", "mp4"]
@@ -149,7 +135,7 @@ def video2dash(opties: Video2DashOpties):
             "-filter:v:0",
             f"scale={video.breedte}:{video.hoogte},format=yuv420p",
             "-r:v:0",
-            f"{video.beeldsnelheid or opties.beeldsnelheid}",
+            f"{video.beeldsnelheid or beeldsnelheid}",
         ]
 
         opdracht += video_opdracht
