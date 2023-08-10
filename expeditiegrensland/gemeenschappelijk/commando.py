@@ -3,21 +3,18 @@ import subprocess
 import shutil
 
 
-def draai_pijp(commandos):
+def draai_pijp(commandos: list[list[str]]):
     logger = logging.getLogger("__main__")
     logger.debug("Volledig commando:\n" + " | \n".join(map(str, commandos)))
 
-    processen = None
+    processen = [subprocess.Popen(commandos[0], stdout=subprocess.PIPE)]
 
-    for commando in commandos:
-        if not processen:
-            processen = [subprocess.Popen(commando, stdout=subprocess.PIPE)]
-        else:
-            processen.append(
-                subprocess.Popen(
-                    commando, stdin=processen[-1].stdout, stdout=subprocess.PIPE
-                )
+    for commando in commandos[1:]:
+        processen.append(
+            subprocess.Popen(
+                commando, stdin=processen[-1].stdout, stdout=subprocess.PIPE
             )
+        )
 
     stdout = processen[-1].communicate()[0]
     stdout = stdout.decode("utf-8", "replace")
@@ -28,10 +25,10 @@ def draai_pijp(commandos):
     return stdout
 
 
-def draai(commando):
+def draai(commando: list[str]):
     return draai_pijp([commando])
 
 
-def vereis_programma(programma):
+def vereis_programma(programma: str):
     if shutil.which(programma) is None:
         raise Exception(f"Dit programma heeft '{programma}' nodig")

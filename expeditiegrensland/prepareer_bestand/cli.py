@@ -5,17 +5,27 @@ from textwrap import dedent
 
 from ..gemeenschappelijk.arg_types import bestaand_bestand, slak
 from ..gemeenschappelijk.maak_cli import maak_cli
-from .converteerders.achtergrond import AchtergrondConverteerder
-from .converteerders.afbeelding_bijlage import AfbeeldingBijlageConverteerder
-from .converteerders.audio_bijlage import AudioBijlageConverteerder
-from .converteerders.film import FilmConverteerder
-from .converteerders.video_bijlage import VideoBijlageConverteerder
-from .noemers.achtergrond import AchtergrondNoemer
-from .noemers.citaat_bijlage import CitaatBijlageNoemer
-from .noemers.film import FilmNoemer
-from .noemers.verhaal_bijlage import VerhaalBijlageNoemer
-from .noemers.woord_bijlage import WoordBijlageNoemer
-from .prepareer_bestand import PrepareerBestandOpties
+from . import prepareer_bestand
+from .converteerders import (
+    achtergrond_converteerder_fabriek,
+    afbeelding_bijlage_converteerder_fabriek,
+    audio_bijlage_converteerder_fabriek,
+    film_converteerder_fabriek,
+    video_bijlage_converteerder_fabriek,
+)
+from .noemers import (
+    achtergrond_noemer_fabriek,
+    citaat_afbeelding_noemer_fabriek,
+    citaat_audio_noemer_fabriek,
+    citaat_video_noemer_fabriek,
+    film_noemer_fabiek,
+    verhaal_afbeelding_noemer_fabriek,
+    verhaal_audio_noemer_fabriek,
+    verhaal_video_noemer_fabriek,
+    woord_afbeelding_noemer_fabriek,
+    woord_audio_noemer_fabriek,
+    woord_video_noemer_fabriek,
+)
 
 
 def configureer_parser(parser: argparse.ArgumentParser):
@@ -131,44 +141,81 @@ def configureer_parser(parser: argparse.ArgumentParser):
     )
 
 
-def converteer_opties(opties: argparse.Namespace) -> PrepareerBestandOpties:
-    if opties.soort == "film":
-        converteerder = FilmConverteerder()
-    elif opties.soort == "achtergrond":
-        converteerder = AchtergrondConverteerder()
-    elif opties.soort == "bijlage" and opties.formaat == "afbeelding":
-        converteerder = AfbeeldingBijlageConverteerder()
-    elif opties.soort == "bijlage" and opties.formaat == "video":
-        converteerder = VideoBijlageConverteerder()
-    elif opties.soort == "bijlage" and opties.formaat == "audio":
-        converteerder = AudioBijlageConverteerder()
-    else:
-        raise RuntimeError("Kan geen geldige converteerder vinden")
+def converteer_opties(opties: argparse.Namespace):
+    converteerder = None
+    naam = None
 
-    if opties.soort == "film":
-        noemer = FilmNoemer(opties.slak)
-    elif opties.soort == "achtergrond":
-        noemer = AchtergrondNoemer(opties.slak)
-    elif opties.soort == "bijlage" and opties.itemtype == "woord":
-        noemer = WoordBijlageNoemer(opties.slak)
-    elif opties.soort == "bijlage" and opties.itemtype == "citaat":
-        noemer = CitaatBijlageNoemer(opties.slak)
-    elif opties.soort == "bijlage" and opties.itemtype == "verhaal":
-        noemer = VerhaalBijlageNoemer(opties.slak)
-    else:
+    match opties.soort:
+        case "film":
+            converteerder = film_converteerder_fabriek()
+            naam = film_noemer_fabiek(opties.slak)
+
+        case "achtergrond":
+            converteerder = achtergrond_converteerder_fabriek()
+            naam = achtergrond_noemer_fabriek(opties.slak)
+
+        case "bijlage":
+            match opties.formaat:
+                case "afbeelding":
+                    converteerder = afbeelding_bijlage_converteerder_fabriek()
+                    match opties.itemtype:
+                        case "woord":
+                            naam = woord_afbeelding_noemer_fabriek(opties.slak)
+                        case "citaat":
+                            naam = citaat_afbeelding_noemer_fabriek(opties.slak)
+                        case "verhaal":
+                            naam = verhaal_afbeelding_noemer_fabriek(opties.slak)
+                        case _:
+                            pass
+
+                case "video":
+                    converteerder = video_bijlage_converteerder_fabriek()
+                    match opties.itemtype:
+                        case "woord":
+                            naam = woord_video_noemer_fabriek(opties.slak)
+                        case "citaat":
+                            naam = citaat_video_noemer_fabriek(opties.slak)
+                        case "verhaal":
+                            naam = verhaal_video_noemer_fabriek(opties.slak)
+                        case _:
+                            pass
+
+                case "audio":
+                    converteerder = audio_bijlage_converteerder_fabriek()
+                    match opties.itemtype:
+                        case "woord":
+                            naam = woord_audio_noemer_fabriek(opties.slak)
+                        case "citaat":
+                            naam = citaat_audio_noemer_fabriek(opties.slak)
+                        case "verhaal":
+                            naam = verhaal_audio_noemer_fabriek(opties.slak)
+                        case _:
+                            pass
+                case _:
+                    pass
+
+        case _:
+            pass
+
+    if not naam:
         raise RuntimeError("Kan geen geldige noemer vinden")
 
-    return PrepareerBestandOpties(converteerder=converteerder, noemer=noemer)
+    if not converteerder:
+        raise RuntimeError("Kan geen geldige converteerder vinden")
+
+    return prepareer_bestand.PrepareerBestandOpties(
+        invoer=opties.invoer, converteerder=converteerder, noemer=naam
+    )
 
 
 def main():
     maak_cli(
         naam="eg-prepareer-bestand",
-        beschrijving="",  # FIXME
+        beschrijving=prepareer_bestand.__doc__,
         configureer_parser=configureer_parser,
-        vereiste_programmas=["ffmpeg"],  # FIXME
+        vereiste_programmas=["ffmpeg"],  # FIXME: Voeg alle benodigde programmas toe
         converteer_opties=converteer_opties,
-        draaier=lambda x: None,  # FIXME
+        draaier=prepareer_bestand.prepareer_bestand,
     )
 
 
