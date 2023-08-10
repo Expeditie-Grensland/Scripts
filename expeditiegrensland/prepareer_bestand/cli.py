@@ -213,7 +213,6 @@ def main():
         naam="eg-prepareer-bestand",
         beschrijving=prepareer_bestand.__doc__,
         configureer_parser=configureer_parser,
-        vereiste_programmas=["ffmpeg"],  # FIXME: Voeg alle benodigde programmas toe
         converteer_opties=converteer_opties,
         draaier=prepareer_bestand.prepareer_bestand,
     )

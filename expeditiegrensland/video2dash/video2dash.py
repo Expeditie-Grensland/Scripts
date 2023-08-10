@@ -8,7 +8,7 @@ from functools import cached_property
 
 from dataclass_wizard import YAMLWizard
 
-from ..gemeenschappelijk.commando import draai
+from ..gemeenschappelijk.commando import draai, vereis_programma
 
 logger = logging.getLogger("__main__")
 
@@ -93,6 +93,8 @@ class Video2DashOpties:
 
 
 def video2dash(opties: Video2DashOpties):
+    vereis_programma("ffmpeg")
+    
     config = opties.config_bestand.config
 
     os.chdir(opties.uitvoer)

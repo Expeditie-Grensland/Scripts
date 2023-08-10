@@ -1,4 +1,9 @@
+from ..gemeenschappelijk.commando import vereis_programma
+
+
 def film_converteerder_fabriek():
+    vereis_programma("ffmpeg")
+    
     def film_converteerder(tmp_map: str):
         return "/home/martijn/Test"
 
@@ -6,6 +11,8 @@ def film_converteerder_fabriek():
 
 
 def achtergrond_converteerder_fabriek():
+    vereis_programma("convert")
+
     def achtergrond_converteerder(tmp_map: str):
         return "/home/martijn/Test"
 
@@ -13,6 +20,8 @@ def achtergrond_converteerder_fabriek():
 
 
 def afbeelding_bijlage_converteerder_fabriek():
+    vereis_programma("convert")
+
     def afbeelding_bijlage_converteerder(tmp_map: str):
         return "/home/martijn/Test"
 
@@ -20,6 +29,8 @@ def afbeelding_bijlage_converteerder_fabriek():
 
 
 def video_bijlage_converteerder_fabriek():
+    vereis_programma("ffmpeg")
+
     def video_bijlage_converteerder(tmp_map: str):
         return "/home/martijn/Test"
 
@@ -27,6 +38,8 @@ def video_bijlage_converteerder_fabriek():
 
 
 def audio_bijlage_converteerder_fabriek():
+    vereis_programma("ffmpeg")
+
     def audio_bijlage_converteerder(tmp_map: str):
         return "/home/martijn/Test"
 

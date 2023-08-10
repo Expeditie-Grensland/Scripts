@@ -78,7 +78,6 @@ def main():
         naam="eg-video2dash",
         beschrijving=video2dash.__doc__,
         configureer_parser=configureer_parser,
-        vereiste_programmas=["ffmpeg"],
         converteer_opties=converteer_opties,
         draaier=video2dash.video2dash,
     )

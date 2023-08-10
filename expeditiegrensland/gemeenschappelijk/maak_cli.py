@@ -16,9 +16,8 @@ def maak_cli(
     beschrijving: str,
     configureer_parser: Callable[[argparse.ArgumentParser], None],
     converteer_opties: Callable[[argparse.Namespace], T],
-    vereiste_programmas: list[str] = [],
     draaier: Callable[[T], None],
-) -> tuple[argparse.Namespace, logging.Logger]:
+):
     logger = logging.getLogger("__main__")
 
     parser = argparse.ArgumentParser(
@@ -48,9 +47,6 @@ def maak_cli(
     logger.debug(f"Ruwe opties:\n{ruwe_opties}")
 
     try:
-        for programma in vereiste_programmas:
-            vereis_programma(programma)
-
         opties = converteer_opties(ruwe_opties)
         logger.debug(f"Opties:\n{opties}")
 
