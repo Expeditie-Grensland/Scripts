@@ -29,6 +29,10 @@ def draai(commando: list[str]):
     return draai_pijp([commando])
 
 
-def vereis_programma(programma: str):
+def vereis_programma(programma: str, programma_naam: str = ""):
     if shutil.which(programma) is None:
-        raise Exception(f"Dit programma heeft '{programma}' nodig")
+        naam = f"'${programma}'"
+        if programma_naam != "":
+            naam += f" (van ${programma_naam})"
+
+        raise Exception(f"Dit programma benodigd ${naam}")
