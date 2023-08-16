@@ -3,7 +3,7 @@ from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
 from collections.abc import Callable
 from logging import getLogger
 
-import coloredlogs
+import coloredlogs  # type: ignore
 
 
 def maak_cli(
@@ -12,14 +12,21 @@ def maak_cli(
     beschrijving: str,
     configureer_parser: Callable[[ArgumentParser], None],
     draai_module: Callable[[Namespace], None],
+    voorbeelden: list[str] | None = None,
 ):
     logger = getLogger("__main__")
+
+    epilog = None
+
+    if voorbeelden:
+        epilog = "\n  ".join(["Voorbeelden:"] + voorbeelden)
 
     parser = ArgumentParser(
         prog=naam,
         description=beschrijving,
         allow_abbrev=False,
         formatter_class=RawTextHelpFormatter,
+        epilog=epilog,
     )
 
     configureer_parser(parser)
@@ -33,7 +40,7 @@ def maak_cli(
     opties = parser.parse_args()
 
     print()
-    coloredlogs.install(
+    coloredlogs.install(  # type: ignore
         logger=logger,
         fmt="%(asctime)s %(levelname)s %(message)s\n",
         level=("DEBUG" if opties.debug else "INFO"),

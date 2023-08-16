@@ -3,8 +3,9 @@
 from argparse import ArgumentParser, Namespace, RawTextHelpFormatter
 from textwrap import dedent
 
-from ..gemeenschappelijk.arg_types import bestaand_bestand, slak
+from ..gemeenschappelijk.arg_types import bestaand_bestand, een_map, slak
 from ..gemeenschappelijk.maak_cli import maak_cli
+from .acties import kopieer_actie_fabriek, upload_actie_fabriek, verplaats_actie_fabriek
 from .converteerders import (
     achtergrond_converteerder_fabriek,
     afbeelding_bijlage_converteerder_fabriek,
@@ -29,6 +30,39 @@ from .prepareer_bestand import prepareer_bestand
 
 
 def configureer_parser(parser: ArgumentParser):
+    actie_groep = parser.add_argument_group(
+        title="Actie",
+        description="De actie om uit te voeren voor het geconverteerde en genoemde bestand",
+    )
+    actie_exclusief = actie_groep.add_mutually_exclusive_group(required=True)
+
+    actie_exclusief.add_argument(
+        "--upload",
+        metavar="EMMER[/MAP]",
+        help=dedent(
+            """
+            Upload het bestand naar S3 in de gegeven emmer (en map).
+            Zorg dat inloggegevens beschikbaar zijn voor Boto3
+            (via een configuratiebestand of omgevingsvariabelen):
+            https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
+        """
+        ).strip(),
+    )
+
+    actie_exclusief.add_argument(
+        "--verplaats",
+        type=een_map,
+        metavar="UITVOER_MAP",
+        help="Verplaats het bestand naar de gegeven map",
+    )
+
+    actie_exclusief.add_argument(
+        "--kopieer",
+        type=een_map,
+        metavar="UITVOER_MAP",
+        help="Kopieer het bestand naar de gegeven map",
+    )
+
     subparsers = parser.add_subparsers(
         title="Soort",
         description=dedent(
@@ -203,15 +237,37 @@ def draai_module(opties: Namespace):
     if not converteerder:
         raise RuntimeError("Kan geen geldige converteerder vinden")
 
-    prepareer_bestand(invoer=opties.invoer, converteerder=converteerder, noemer=noemer)
+    actie = None
+
+    if opties.upload:
+        actie = upload_actie_fabriek(opties.upload)
+    elif opties.verplaats:
+        actie = verplaats_actie_fabriek(opties.verplaats)
+    elif opties.kopieer:
+        actie = kopieer_actie_fabriek(opties.kopieer)
+
+    if not actie:
+        raise RuntimeError("Kan geen geldige actie vinden")
+
+    prepareer_bestand(
+        invoer=opties.invoer,
+        converteerder=converteerder,
+        noemer=noemer,
+        actie=actie,
+    )
 
 
 def main():
     maak_cli(
         naam="eg-prepareer-bestand",
-        beschrijving="Prepareer bestand",
+        beschrijving="Prepareer (converteer, hernoem & upload) een bestand voor gebruik op de website",
         configureer_parser=configureer_parser,
         draai_module=draai_module,
+        voorbeelden=[
+            "eg-prepareer-bestand --upload eg-media film noordkaap noordkaap-movie.mp4",
+            "eg-prepareer-bestand --upload eg-media achtergrond - *.jpg",
+            "eg-prepareer-bestand --verplaats ./media bijlage woord audio - kapot.mp3"
+        ],
     )
 
 
