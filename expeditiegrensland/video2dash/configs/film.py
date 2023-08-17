@@ -71,7 +71,7 @@ video2dash_film_config = Video2DashConfig(
     ],
     terugval=[
         Video2DashConfigTerugval(
-            naam="terugval.mp4",
+            naam="720p.mp4",
             video=Video2DashConfigVideo(
                 codec="libx264",
                 profiel="main",
