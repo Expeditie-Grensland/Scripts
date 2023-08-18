@@ -1,5 +1,45 @@
-from os import makedirs, path
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from os import path
+
 from ..gemeenschappelijk.commando import draai, vereis_programma
+
+
+@dataclass
+class AfbeeldingVersie(ABC):
+    naam: str
+    opties: list[str] = field(default_factory=list)
+
+    @abstractmethod
+    def krijg_opties(self) -> list[str]:
+        raise NotImplementedError
+
+
+@dataclass
+class JpegAfbeeldingVersie(AfbeeldingVersie):
+    def __post_init__(self):
+        self.naam = self.naam + ".jpg"
+
+    def krijg_opties(self):
+        return [
+            "-colorspace",
+            "RGB",
+            "-sampling-factor",
+            "4:2:0",
+            "-quality",
+            "80",
+            "-strip",
+            *self.opties,
+        ]
+
+
+@dataclass
+class WebpAfbeeldingVersie(AfbeeldingVersie):
+    def __post_init__(self):
+        self.naam = self.naam + ".webp"
+
+    def krijg_opties(self):
+        return ["-colorspace", "RGB", "-quality", "80", "-strip", *self.opties]
 
 
 def film_converteerder_fabriek():
@@ -11,46 +51,55 @@ def film_converteerder_fabriek():
     return film_converteerder
 
 
-def _converteer_afbeelding(in_pad: str, uit_pad: str, breedte: int):
-    draai(
-        [
-            "gm",
-            "convert",
-            in_pad,
-            "-colorspace",
-            "RGB",
-            "-sampling-factor",
-            "4:2:0",
-            "-define",
-            "jpeg:dct-method=float",
-            "-quality",
-            "80",
-            "-interlace",
-            "Plane",
-            "-strip",
-            "-resize",
-            str(breedte),
-            uit_pad,
-        ]
-    )
+def _converteer_afbeeldingen(
+    in_pad: str, uit_map: str, versies: list[AfbeeldingVersie]
+):
+    for versie in versies:
+        draai(
+            [
+                "gm",
+                "convert",
+                in_pad,
+                *versie.krijg_opties(),
+                path.join(uit_map, versie.naam),
+            ]
+        )
 
 
 def achtergrond_converteerder_fabriek():
     vereis_programma("gm", "GraphicsMagick")
 
     def achtergrond_converteerder(in_pad: str, uit_map: str):
-        _converteer_afbeelding(in_pad, path.join(uit_map, "achtergrond.jpg"), 1500)
-        _converteer_afbeelding(in_pad, path.join(uit_map, "achtergrond-klein.jpg"), 500)
-        _converteer_afbeelding(in_pad, path.join(uit_map, "achtergrond-minuscuul.jpg"), 16)
+        _converteer_afbeeldingen(
+            in_pad,
+            uit_map,
+            [
+                JpegAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
+                WebpAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
+                JpegAfbeeldingVersie("klein", ["-thumbnail", "500>"]),
+                WebpAfbeeldingVersie("klein", ["-thumbnail", "500>"]),
+                JpegAfbeeldingVersie("miniscuul", ["-thumbnail", "30"]),
+            ],
+        )
 
     return achtergrond_converteerder
 
 
 def afbeelding_bijlage_converteerder_fabriek():
-    vereis_programma("convert")
+    vereis_programma("gm", "GraphicsMagick")
 
     def afbeelding_bijlage_converteerder(in_pad: str, uit_map: str):
-        pass
+        _converteer_afbeeldingen(
+            in_pad,
+            uit_map,
+            [
+                JpegAfbeeldingVersie("volledig"),
+                WebpAfbeeldingVersie("volledig"),
+                JpegAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
+                WebpAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
+                JpegAfbeeldingVersie("miniscuul", ["-thumbnail", "30"]),
+            ],
+        )
 
     return afbeelding_bijlage_converteerder
 
