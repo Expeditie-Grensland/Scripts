@@ -1,3 +1,4 @@
+from genericpath import exists
 from logging import getLogger
 from os import path, walk
 from shutil import copytree, move
@@ -11,7 +12,9 @@ def verplaats_actie_fabriek(uit_map: str):
     def verplaats_actie(in_pad: str, naam: str):
         uit_pad = path.join(uit_map, naam)
         logger.info(f"Verplaatsen naar:\n{uit_pad}")
-        move(in_pad, path.join(uit_map, naam))
+        if exists(uit_pad):
+            raise FileExistsError("Uitvoermap bestaat al")
+        move(in_pad, uit_pad)
 
     return verplaats_actie
 
@@ -20,6 +23,8 @@ def kopieer_actie_fabriek(uit_map: str):
     def kopieer_actie(in_pad: str, naam: str):
         uit_pad = path.join(uit_map, naam)
         logger.info(f"Kopiëren naar:\n{uit_pad}")
+        if exists(uit_pad):
+            raise FileExistsError("Uitvoermap bestaat al")
         copytree(in_pad, path.join(uit_map, naam))
 
     return kopieer_actie
