@@ -31,10 +31,6 @@
         background-color: #333;
       }
 
-      .row {
-        margin-top: 5rem;
-      }
-
       .ratio {
         box-shadow: 0 0 30px -10px #000;
         display: block;
@@ -118,7 +114,7 @@
   </head>
   <body>
     <div class="container text-center">
-      <div class="row">
+      <div class="row mt-5 mb-5">
         <div class="col">
           <div class="img-large ratio" href="">
             <div id="bg-groot" class="img-bg"></div>
@@ -129,7 +125,7 @@
           </div>
         </div>
       </div>
-      <div class="row">
+      <div class="row mb-5">
         <div class="col-12 col-md-6 col-lg-4">
           <div class="img-small ratio" href="">
             <div id="bg-klein" class="img-bg"></div>
@@ -140,26 +136,74 @@
           </div>
         </div>
       </div>
-      <div class="row mb-5">
-        <input id="bestand-keuze" type="file" accept="image/*" />
+      <div class="row mb-3 text-start">
+        <div class="col-12">
+          <label for="bestand-keuze" class="mb-2">Afbeelding</label>
+          <input
+            id="bestand-keuze"
+            class="form-control"
+            type="file"
+            accept="image/*"
+          />
+        </div>
+      </div>
+      <div class="row mb-5 text-start">
+        <div class="col-sm-3">
+          <label for="knip-boven" class="mb-2">Knip boven</label>
+          <input id="knip-boven" class="form-control" type="number" value="0" />
+        </div>
+        <div class="col-sm-3">
+          <label for="knip-rechts" class="mb-2">Knip rechts</label>
+          <input
+            id="knip-rechts"
+            class="form-control"
+            type="number"
+            value="0"
+          />
+        </div>
+        <div class="col-sm-3">
+          <label for="knip-onder" class="mb-2">Knip onder</label>
+          <input id="knip-onder" class="form-control" type="number" value="0" />
+        </div>
+        <div class="col-sm-3">
+          <label for="knip-links" class="mb-2">Knip links</label>
+          <input id="knip-links" class="form-control" type="number" value="0" />
+        </div>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/blueimp-load-image@5.16.0/js/load-image.all.min.js"></script>
     <script>
-      function veranderAfbeelding(event) {
-        const files = (event.target || window.event.srcElement).files;
+      const bestandKeuze = document.getElementById("bestand-keuze");
+      const knipBoven = document.getElementById("knip-boven");
+      const knipRechts = document.getElementById("knip-rechts");
+      const knipOnder = document.getElementById("knip-onder");
+      const knipLinks = document.getElementById("knip-links");
 
-        if (FileReader && files && files.length) {
-          var fr = new FileReader();
-          fr.onload = function () {
-            const str = `url('${fr.result}')`;
-            document.getElementById("bg-groot").style.backgroundImage = str;
-            document.getElementById("bg-klein").style.backgroundImage = str;
-          };
-          fr.readAsDataURL(files[0]);
-        }
-      }
+      const veranderAfbeelding = async function () {
+        if (!bestandKeuze.files || !bestandKeuze.files.length) return;
 
-      document.getElementById("bestand-keuze").onchange = veranderAfbeelding;
+        const data = await loadImage(bestandKeuze.files[0], {
+          canvas: true,
+          top: knipBoven.value,
+          right: knipRechts.value,
+          bottom: knipOnder.value,
+          left: knipLinks.value,
+        });
+        const canvas = data.image;
+
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const bgStr = `url('${url}')`;
+          document.getElementById("bg-groot").style.backgroundImage = bgStr;
+          document.getElementById("bg-klein").style.backgroundImage = bgStr;
+        });
+      };
+
+      bestandKeuze.onchange = veranderAfbeelding;
+      knipBoven.onchange = veranderAfbeelding;
+      knipRechts.onchange = veranderAfbeelding;
+      knipOnder.onchange = veranderAfbeelding;
+      knipLinks.onchange = veranderAfbeelding;
     </script>
   </body>
 </html>
