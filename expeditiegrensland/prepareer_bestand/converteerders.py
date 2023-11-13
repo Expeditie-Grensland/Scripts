@@ -73,11 +73,13 @@ def achtergrond_converteerder_fabriek():
             in_pad,
             uit_map,
             [
+                JpegAfbeeldingVersie("volledig"),
                 JpegAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
                 WebpAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
                 JpegAfbeeldingVersie("klein", ["-thumbnail", "500>"]),
                 WebpAfbeeldingVersie("klein", ["-thumbnail", "500>"]),
                 JpegAfbeeldingVersie("miniscuul", ["-thumbnail", "30"]),
+                WebpAfbeeldingVersie("miniscuul", ["-thumbnail", "30"]),
             ],
         )
 
