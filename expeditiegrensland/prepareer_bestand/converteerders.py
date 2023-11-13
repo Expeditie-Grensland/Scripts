@@ -23,7 +23,7 @@ class JpegAfbeeldingVersie(AfbeeldingVersie):
     def krijg_opties(self):
         return [
             "-colorspace",
-            "RGB",
+            "sRGB",
             "-sampling-factor",
             "4:2:0",
             "-quality",
@@ -39,7 +39,7 @@ class WebpAfbeeldingVersie(AfbeeldingVersie):
         self.naam = self.naam + ".webp"
 
     def krijg_opties(self):
-        return ["-colorspace", "RGB", "-quality", "80", "-strip", *self.opties]
+        return ["-colorspace", "sRGB", "-quality", "80", "-strip", *self.opties]
 
 
 def film_converteerder_fabriek():
@@ -57,8 +57,7 @@ def _converteer_afbeeldingen(
     for versie in versies:
         draai(
             [
-                "gm",
-                "convert",
+                "magick",
                 in_pad,
                 *versie.krijg_opties(),
                 path.join(uit_map, versie.naam),
@@ -67,7 +66,7 @@ def _converteer_afbeeldingen(
 
 
 def achtergrond_converteerder_fabriek():
-    vereis_programma("gm", "GraphicsMagick")
+    vereis_programma("magick", "ImageMagick 7+")
 
     def achtergrond_converteerder(in_pad: str, uit_map: str):
         _converteer_afbeeldingen(
@@ -86,15 +85,13 @@ def achtergrond_converteerder_fabriek():
 
 
 def afbeelding_bijlage_converteerder_fabriek():
-    vereis_programma("gm", "GraphicsMagick")
+    vereis_programma("magick", "ImageMagick 7+")
 
     def afbeelding_bijlage_converteerder(in_pad: str, uit_map: str):
         _converteer_afbeeldingen(
             in_pad,
             uit_map,
             [
-                JpegAfbeeldingVersie("volledig"),
-                WebpAfbeeldingVersie("volledig"),
                 JpegAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
                 WebpAfbeeldingVersie("normaal", ["-thumbnail", "1500>"]),
                 JpegAfbeeldingVersie("miniscuul", ["-thumbnail", "30"]),
