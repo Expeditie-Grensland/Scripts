@@ -2,7 +2,7 @@
 
 ## Scripts
 
-`eg-prepareer-bestand`: Hernoem (en upload) een bestand voor gebruik op de website
+`eg-prepareer-bestand`: Prepareer (converteer, hernoem & upload) een bestand voor gebruik op de website
 
 `eg-video2dash`: Zet een videobestand om naar dash bestanden voor gebruik op de website
 
